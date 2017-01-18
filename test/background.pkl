@@ -1,5 +1,5 @@
 (dp1
-S'032016_001_RFPstack_018'
+S'032016_001_RFPstack_019'
 p2
 (cnumpy.core.multiarray
 scalar
@@ -23,14 +23,9 @@ g3
 S'\xa2E\xb6\xf3\xbd\xf1\xa1@'
 tRp7
 tp8
-sS'032016_001_RFPstack_019'
+sS'032016_001_RFPstack_017'
 p9
 (g6
 g7
 tp10
-sS'032016_001_RFPstack_017'
-p11
-(g6
-g7
-tp12
 s.
