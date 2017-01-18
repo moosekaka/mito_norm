@@ -6,7 +6,6 @@ import traceback
 import cPickle as pickle
 import pipefuncs as pf
 import sys
-#from pipeline import make_networkx as mn
 # pylint: disable=C0103
 
 
@@ -65,18 +64,18 @@ def main():
     """
     Pipeline to normalize'raw' vtk files and make mito network graph
     """
-    mkdir_exist(op.join(os.curdir, 'Normalized'))
+    mkdir_exist(op.join(os.curdir, 'test', 'Normalized'))
     try:
-        with open(op.join(os.curdir, 'background.pkl'), 'rb') as inpt:
+        with open(op.join(os.curdir, 'test', 'background.pkl'), 'rb') as inpt:
             background = pickle.load(inpt)
     except IOError:
         print "No background file detected, default to min of ch 1 and ch2"
         background = {}
 
     try:
-        vtkSkel = swalk(op.join(os.curdir), '*RFP*skeleton.vtk', stop=-13)
-        vtkVolRfp = swalk(op.join(os.curdir), '*RF*resampled.vtk', stop=-14)
-        vtkVolGfp = swalk(op.join(os.curdir), '*GF*resampled.vtk', stop=-14)
+        vtkSkel = swalk(op.join(os.curdir, 'test'), '*RFP*skeleton.vtk', stop=-13)
+        vtkVolRfp = swalk(op.join(os.curdir, 'test'), '*RF*resampled.vtk', stop=-14)
+        vtkVolGfp = swalk(op.join(os.curdir, 'test'), '*GF*resampled.vtk', stop=-14)
     except UsageError:
         raise
 
@@ -85,8 +84,9 @@ def main():
         data = pf.pt_cld_sclrs(vtkSkel[key],
                                vtkVolGfp[key.replace('RFP', 'GFP')],
                                vtkVolRfp[key], radius=2.5)
+
         # saves all results to './Normalized' directory
-        filename = op.join(op.curdir, 'Normalized',
+        filename = op.join(op.curdir, 'test', 'Normalized',
                            'Norm_{}_skeleton.vtk'.format(key))
         (a, b, c, d, e) = pf.normSkel(data, background.get(key))
 
@@ -96,7 +96,6 @@ def main():
                 'background_sub_ch2': d,
                 'width_equivalent': e}
         pf.writevtk(data, filename, **calc)
-#            nl, el, nxgrph = mn.makegraph(data, "_".join((lab, key)))
 
 if __name__ == '__main__':
     sys.exit(main())
