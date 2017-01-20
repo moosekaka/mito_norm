@@ -7,7 +7,7 @@ import os
 import os.path as op
 import vtk
 import vtk.util.numpy_support as vnpy
-import numpy as np
+from numpy import ceil, mean
 # pylint: disable=C0103
 datadir = op.join(os.getcwd())
 
@@ -75,13 +75,13 @@ def _pointcloud(skel, ch1, ch2, radius=2.5):
 #   averaging of pts intensity value surrounding each point in skel
     for n in range(skel.GetNumberOfPoints()):
 
-        pt_of_int = tuple(np.ceil(i/.055) for i in skel.GetPoint(n))
+        pt_of_int = tuple(ceil(i/.055) for i in skel.GetPoint(n))
         loc.FindPointsWithinRadius(radius, pt_of_int, result)
         vox_id = [result.GetId(i) for i in range(result.GetNumberOfIds())]
 
-        vox_ch1.InsertNextValue(np.mean([inten_ch1(m) for m in vox_id]))
+        vox_ch1.InsertNextValue(mean([inten_ch1(m) for m in vox_id]))
 
-        vox_ch2.InsertNextValue(np.mean([inten_ch2(m) for m in vox_id]))
+        vox_ch2.InsertNextValue(mean([inten_ch2(m) for m in vox_id]))
     return vox_ch1, vox_ch2
 
 
