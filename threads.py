@@ -10,11 +10,21 @@ import os
 import os.path as op
 from collections import defaultdict
 import fnmatch
-import traceback
-import cPickle as pickle
+import errno
 import cPickle as pickle
 import pipefuncs as pf
-import sys
+
+
+def mkdir_exist(path):
+    """
+    Makes a folder if it does not already exists
+    """
+    try:
+        os.makedirs(path)
+        print "{} created!".format(path)
+    except OSError as error:
+        if error.errno != errno.EEXIST:
+            raise
 
 
 class getFilesThread(QThread):
@@ -46,6 +56,7 @@ class getFilesThread(QThread):
         self.emit(SIGNAL('getpaths(PyQt_PyObject)'), vtks)
 
 
+
 class writeVtkThread(QThread):
     def __init__(self, paths, savedir):
         QThread.__init__(self)
@@ -56,24 +67,25 @@ class writeVtkThread(QThread):
         self.wait()
 
     def run(self):
+        save_folder= op.join(self.savedir, 'Normalized')
         skels = self.paths['skeleton']
         gfp = self.paths['gfp_vol']
         rfp = self.paths['rfp_vol']
+        mkdir_exist(save_folder)
 
         for key, _ in sorted(skels.iteritems()):
-            string1 = 'Finished Normalization for {}'.format(key)
 
-            savename = op.join(self.savedir, 'Normalized',
+            savename = op.join(save_folder,
                                'Norm_{}_skeleton.vtk'.format(key))
-            string2 = 'Saved as {}'.format(savename)
 
             data = pf.pt_cld_sclrs(skels[key],
                                    gfp[key.replace('RFP', 'GFP')],
                                    rfp[key],
                                    radius=2.5)
             (a, b, c, d, e) = pf.normSkel(data)
-            self.emit(SIGNAL('normsig(QString)'), string1)
-#
+            string1 = 'Saved as {}'.format(savename)
+            self.emit(SIGNAL('beep(QString)'), string1)
+
             # these are the labels used to name the outputs above
             calc = {'norm_scaled': a,
                     'norm_unscaled': b,
@@ -82,5 +94,8 @@ class writeVtkThread(QThread):
                     'width_equivalent': e}
             pf.writevtk(data, savename, **calc)
 
-            self.emit(SIGNAL('savedsig(QString)'), string2)
-            self.emit(SIGNAL('update()'))
+            self.emit(SIGNAL('update_progress()'))
+
+        string2 = 'Finished Normalization of {} files'.format(len(skels))
+        self.emit(SIGNAL('beep(QString)'), string2)
+

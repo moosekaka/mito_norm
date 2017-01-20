@@ -54,22 +54,25 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         self.progress_bar.setValue(0)
 
         self.run_thread = writeVtkThread(self.paths, self.datafolder)
-        self.connect(self.run_thread, SIGNAL("normsig(QString)"), self.report)
-        self.connect(self.run_thread, SIGNAL("savedsig(QString)"), self.report)
-        self.connect(self.run_thread, SIGNAL("update()"), self.inc_bar)
+        self.connect(self.run_thread, SIGNAL("beep(QString)"), self.report)
+        self.connect(self.run_thread, SIGNAL("update_progress()"), self.bar)
+        self.run_thread.finished.connect(self.done)
         self.run_thread.start()
 
     def report(self, text):
         self.results_window.addItem(text)
 
-    def inc_bar(self):
+    def bar(self):
         self.progress_bar.setValue(self.progress_bar.value()+ 1)
-
 
     def filedone(self):
         self.dir_button.setEnabled(False)
         self.run_button.setEnabled(True)
-#        QtGui.QMessageBox.information(self, "Done!", self.paths['skeleton'].keys()[0])
+
+    def done(self):
+        self.dir_button.setEnabled(True)
+        self.run_button.setEnabled(False)
+        QtGui.QMessageBox.information(self, "Finished", "Files Normalized!")
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
