@@ -7,8 +7,12 @@ Created on Wed Jan 11 16:05:18 2017
 import os
 import sys
 from PyQt4 import QtCore, QtGui, uic
+from PyQt4.QtCore import QThread, SIGNAL
+
 from PyQt4.QtGui import QFileDialog
 import write_raw_vtk as wvtk
+from threads import getFilesThread, writeVtkThread
+from collections import defaultdict
 
 
 
@@ -22,25 +26,50 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
         self.dir_button.clicked.connect(self.selectDir)
+        self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self.runmain)
+        self.paths = None
+        self.datafolder = None
+#        self.folder = QFileDialog()
+#        self.folder.currentChanged.connect(lambda: self.printlog(self.fpath))
 
     def selectDir(self):
-        dirpath = QFileDialog.getExistingDirectory(self, 'Select Dir of Files')
+        self.datafolder = QtGui.QFileDialog.getExistingDirectory(self,
+                                                                 'Folders')
+        self.file_thread = getFilesThread(str(self.datafolder))
+        self.connect(self.file_thread, SIGNAL("printlog(QString)"), self.updatedir)
+        self.connect(self.file_thread, SIGNAL("getpaths(PyQt_PyObject)"), self.getpaths)
+        self.connect(self.file_thread, SIGNAL("finished()"), self.filedone)
+        self.file_thread.start()
 
-        os.chdir(str(dirpath))
-        self.dir_window.setText('dir changed to ' + dirpath)
+#
+    def updatedir(self, text):
+        self.dir_window.addItem(text)
+
+    def getpaths(self, dicts):
+        self.paths = dicts
 
     def runmain(self):
-        wvtk.main()
-        self.results_window.setText('Finished!')
+        self.progress_bar.setMaximum(len(self.paths['skeleton']))
+        self.progress_bar.setValue(0)
 
-#    def CalculateTax(self):
-#        price = int(self.price_box.toPlainText())
-#        tax = (self.tax_rate.value())
-#        total_price = price  + ((tax / 100.) * price)
-#        total_price_string = ("The total price with tax is: " +
-#                              str(total_price))
-#        self.results_window.setText(total_price_string)
+        self.run_thread = writeVtkThread(self.paths, self.datafolder)
+        self.connect(self.run_thread, SIGNAL("normsig(QString)"), self.report)
+        self.connect(self.run_thread, SIGNAL("savedsig(QString)"), self.report)
+        self.connect(self.run_thread, SIGNAL("update()"), self.inc_bar)
+        self.run_thread.start()
+
+    def report(self, text):
+        self.results_window.addItem(text)
+
+    def inc_bar(self):
+        self.progress_bar.setValue(self.progress_bar.value()+ 1)
+
+
+    def filedone(self):
+        self.dir_button.setEnabled(False)
+        self.run_button.setEnabled(True)
+#        QtGui.QMessageBox.information(self, "Done!", self.paths['skeleton'].keys()[0])
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

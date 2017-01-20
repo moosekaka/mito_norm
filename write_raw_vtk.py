@@ -28,36 +28,6 @@ def mkdir_exist(path):
             raise
 
 
-def swalk(ddir, txt, start=None, stop=None):
-    """
-    wrapper caller for single level file dict, returns a dict
-
-    Parameters
-    ----------
-    ddir : str
-        path of dir
-
-    txt : str
-        text to be matched with fnmatch, shell format
-
-    start : int
-      start of slice
-
-    end : int
-      end of slice
-    """
-    vtf = dict()
-    for root, _, files in os.walk(ddir):
-        for f in files:
-            if fnmatch.fnmatch(f, txt):
-                vtf[f[start:stop]] = op.join(root, f)
-        break  # only walk thru the top directory, not the Normalized dir
-    if len(vtf):
-        return vtf
-    else:
-        traceback.print_stack(limit=5)
-        raise UsageError('Search for file with ext. {} in dir {} failed'
-                         .format(txt, ddir))
 
 
 def main():
@@ -90,6 +60,7 @@ def main():
                            'Norm_{}_skeleton.vtk'.format(key))
         (a, b, c, d, e) = pf.normSkel(data, background.get(key))
 
+        # these are the labels used to name the outputs above
         calc = {'norm_scaled': a,
                 'norm_unscaled': b,
                 'background_sub_ch1': c,

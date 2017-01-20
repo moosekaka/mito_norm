@@ -30,19 +30,12 @@
      </widget>
     </item>
     <item>
-     <widget class="QTextEdit" name="dir_window">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>100</height>
-       </size>
-      </property>
-     </widget>
+     <widget class="QListWidget" name="dir_window"/>
     </item>
     <item>
      <widget class="QPushButton" name="dir_button">
       <property name="text">
-       <string>Select Dir</string>
+       <string>Select Folder where Data is Located</string>
       </property>
      </widget>
     </item>
@@ -54,7 +47,14 @@
      </widget>
     </item>
     <item>
-     <widget class="QTextBrowser" name="results_window"/>
+     <widget class="QListWidget" name="results_window"/>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="progress_bar">
+      <property name="value">
+       <number>0</number>
+      </property>
+     </widget>
     </item>
     <item>
      <widget class="QPushButton" name="run_button">
