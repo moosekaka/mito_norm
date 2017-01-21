@@ -46,7 +46,8 @@ def pt_cld_sclrs(skelpath, ch1path, ch2path, **kwargs):
     voxels_ch2 = vtk_read(ch2path,
                           readertype='vtkStructuredPointsReader')
 
-    ptcld_ch1, ptcld_ch2 = _pointcloud(dataSkel, voxels_ch1, voxels_ch2, **kwargs)
+    ptcld_ch1, ptcld_ch2 = _pointcloud(dataSkel, voxels_ch1, voxels_ch2,
+                                       **kwargs)
     polydata = vtk.vtkPolyData()
     polydata.SetPoints(dataSkel.GetPoints())
     polydata.SetLines(dataSkel.GetLines())
