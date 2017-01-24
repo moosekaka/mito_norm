@@ -25,16 +25,18 @@ def vtk_read(fpath, readertype='vtkPolyDataReader'):
 
 def pt_cld_sclrs(skelpath, ch1path, ch2path, **kwargs):
     """
-    Returns scalar values from voxels data (eg. resampledVTK) lying within
+    Returns scalar values from voxels data (eg. *resampledVTK*) lying within
     a point cloud of a specified radius for each point
 
     Parameters
     ----------
     skelpath, ch1path, ch2path : str
-        filepaths to skeleton vtk, volume/voxels vtk output of respective
+        filepaths to skeleton and volume/voxels VTK output of respective
         channels to be normalized
     kwargs :
-        radius value argument (float) for _pointcloud(), default=2.5 pixels
+        radius value argument (float) for _pointcloud()
+
+        *will default use a value of 2.5 pixels*
     Returns
     -------
     polydata : VTK poly
@@ -124,14 +126,33 @@ def normSkel(polydata, background=None):
     _min = min(unscaled_dy)
     _max = max(unscaled_dy)
     normalized_dy = ((unscaled_dy - _min)/(_max - _min))
-    return normalized_dy, unscaled_dy, ch1_bckgrnd, ch2_bckgrnd, width_eqv
+
+    # Output results as a labelled dictionary
+    results = {'normalized_dy': normalized_dy,
+               'unscaled_dy': unscaled_dy,
+               'ch1_bckgrnd': ch1_bckgrnd,
+               'ch2_bckgrnd': ch2_bckgrnd,
+               'width_eqv': width_eqv}
+    return results
 
 
 def writevtk(dat, fname, **kwargs):
     """
-    Output as "fname", with labels for scalar values as a dictionary
+    Write out a vtk file using VTK polydata object *dat* and a filename *fname*
+    with optional labels dictionary *kwargs* for the outputs
+
+    kwargs
+    ------
+    Default dictionary keys are:
+
+    * normalized_dy
+    * unscaled_dy
+    * ch1_bckgrnd
+    * ch2_bckgrnd
+    * width_eqv'
+
     """
-    for k in kwargs:
+    for k in sorted(kwargs):
         temp = vnpy.numpy_to_vtk(kwargs[k])
         temp.SetName(k)
         dat.GetPointData().AddArray(temp)

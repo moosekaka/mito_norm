@@ -8,14 +8,14 @@ Created on Wed Jan 18 14:06:59 2017
 import os
 import os.path as op
 import re
+import errno
 from collections import defaultdict
 from PyQt4.QtCore import QThread, SIGNAL
-import errno
 import functions as pf
 
 SEARCHDICT = defaultdict(dict,
-                         {'resampled': {'RFPstack': 'rfp_vol',
-                                        'GFPstack': 'gfp_vol'},
+                         {'resampled': {'RFPstack': 'rfp',
+                                        'GFPstack': 'gfp'},
                           'skeleton': {'RFPstack': 'skeleton'}})
 
 
@@ -32,7 +32,9 @@ def _mkdir_exist(path):
 
 
 class getFilesThread(QThread):
-
+    """
+    Thread method to get paths for skeleton and resampled voxels VTK files
+    """
     def __init__(self, folder):
         QThread.__init__(self)
         self.folder = folder
@@ -42,20 +44,21 @@ class getFilesThread(QThread):
 
     def run(self):
         vtks = defaultdict(dict)
+
         for files in os.listdir(self.folder):
             if op.isfile(op.join(self.folder, files)):
-                vtk_type = channel_type = None  # must be initiliazed
-                for match in re.finditer(r'(skeleton|resampled)', files):
-                    vtk_type = match.group()
-                for match in re.finditer(r'[RG]FPstack', files):
-                    channel_type = match.group()
-                    cell_id = files[:match.end()]
+                vtk_type = re.search(r'(skeleton|resampled)', files)
+                channel_type = re.search(r'([GR]FPstack)\w?\d+', files)
 
-                if vtk_type and channel_type:  # if both is not None
-                    # return None if its a skeleton of GFP type
-                    prefix = SEARCHDICT.get(vtk_type).get(channel_type)
-                    if prefix is not None:
+                if vtk_type and channel_type:
+                    cell_id = channel_type.string[:channel_type.end()].lower()
+                    prefix = (SEARCHDICT.
+                              get(vtk_type.group(1)).
+                              get(channel_type.group(1)))
+
+                    if prefix:  # if skeleton GFPstack do nothing
                         vtks[prefix][cell_id] = op.join(self.folder, files)
+
         for prefix in vtks:
             string = ('There are {1} VTK files found'
                       ' with prefix {0}').format(prefix,
@@ -66,41 +69,46 @@ class getFilesThread(QThread):
 
 
 class writeVtkThread(QThread):
-    def __init__(self, paths, savedir):
+    """
+    Thread method to for normalization of VTK files
+    """
+    def __init__(self, paths, savedir,
+                 skel_prefix='skeleton',
+                 ch1_prefix='gfp',
+                 ch2_prefix='rfp'):
         QThread.__init__(self)
         self.paths = paths
         self.savedir = str(savedir)
+        self.skel_prefix = skel_prefix
+        self.ch1_prefix = ch1_prefix
+        self.ch2_prefix = ch2_prefix
 
     def __del__(self):
         self.wait()
 
     def run(self):
         save_folder = op.join(self.savedir, 'Normalized')
-        skels = self.paths['skeleton']
-        gfp = self.paths['gfp_vol']
-        rfp = self.paths['rfp_vol']
         _mkdir_exist(save_folder)
+        skels = self.paths[self.skel_prefix]  # dict of skeletons paths
 
+        # note because skeleton key is based on ch2, re.sub() is needed to
+        # get correct value for ch1 path
         for key, _ in sorted(skels.iteritems()):
-
             savename = op.join(save_folder,
                                'Norm_{}_skeleton.vtk'.format(key))
 
-            data = pf.pt_cld_sclrs(skels[key],
-                                   gfp[key.replace('RFP', 'GFP')],
-                                   rfp[key],
+            data = pf.pt_cld_sclrs(self.paths[self.skel_prefix][key],
+                                   (self.paths[self.ch1_prefix]
+                                    [re.sub(self.ch2_prefix,
+                                            self.ch1_prefix,
+                                            key)]),
+                                   self.paths[self.ch2_prefix][key],
                                    radius=2.5)
-            (a, b, c, d, e) = pf.normSkel(data)
+            dict_output = pf.normSkel(data)
             string1 = 'Saved as {}'.format(savename)
             self.emit(SIGNAL('beep(QString)'), string1)
 
-            # these are the labels used to name the outputs above
-            calc = {'norm_scaled': a,
-                    'norm_unscaled': b,
-                    'background_sub_ch1': c,
-                    'background_sub_ch2': d,
-                    'width_equivalent': e}
-            pf.writevtk(data, savename, **calc)
+            pf.writevtk(data, savename, **dict_output)
 
             self.emit(SIGNAL('update_progress()'))
 
