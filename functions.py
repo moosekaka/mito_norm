@@ -23,7 +23,7 @@ def vtk_read(fpath, readertype='vtkPolyDataReader'):
     return data
 
 
-def pt_cld_sclrs(skelpath, ch1path, ch2path, **kwargs):
+def point_cloud_scalars(skelpath, ch1path, ch2path, **kwargs):
     """
     Returns scalar values from voxels data (eg. *resampledVTK*) lying within
     a point cloud of a specified radius for each point
@@ -41,6 +41,8 @@ def pt_cld_sclrs(skelpath, ch1path, ch2path, **kwargs):
     -------
     polydata : VTK poly
         polydata object with raw scalar values and width
+    np_voxel1, np_voxel2 : Numpy Array
+        numpy array conversion of VTK voxel intensities
     """
     dataSkel = vtk_read(skelpath)
     voxels_ch1 = vtk_read(ch1path,
@@ -90,7 +92,7 @@ def _pointcloud(skel, ch1, ch2, radius=2.5):
     return vox_ch1, vox_ch2
 
 
-def normSkel(polydata, raw_vox_ch1, raw_vox_ch2, background_thresh=5.):
+def normalize_skel(polydata, raw_vox_ch1, raw_vox_ch2, background_thresh=5.):
     """
     Normalize channels to correct for focal plane intensity variations
 
@@ -135,7 +137,7 @@ def normSkel(polydata, raw_vox_ch1, raw_vox_ch2, background_thresh=5.):
     return results
 
 
-def writevtk(dat, fname, **kwargs):
+def write_vtk(dat, fname, **kwargs):
     """
     Write out a vtk file using VTK polydata object *dat* and a filename *fname*
     with optional labels dictionary *kwargs* for the outputs
@@ -160,15 +162,3 @@ def writevtk(dat, fname, **kwargs):
     writer.SetFileName(fname)
     writer.SetInputData(dat)
     writer.Update()
-
-L = [i for i in os.listdir('./test')]
-skel = op.join('.','test',L[3])
-ch2 = op.join('.', 'test',L[2])
-ch1 = op.join('.','test',L[0])
-data, c1, c2 =pt_cld_sclrs(skel, ch1, ch2)
-
-#inten1 = data.GetPointData().GetArray('vox_ch1')
-#inten2 = data.GetPointData().GetArray('vox_ch2')
-#
-#inten1 = vnpy.vtk_to_numpy(inten1)
-#inten2 = vnpy.vtk_to_numpy(inten2)

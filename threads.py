@@ -12,7 +12,6 @@ import errno
 from collections import defaultdict
 from PyQt4.QtCore import QThread, SIGNAL
 import functions as pf
-from numpy import percentile
 
 SEARCHDICT = defaultdict(dict,
                          {'resampled': {'RFPstack': 'rfp',
@@ -98,20 +97,18 @@ class writeVtkThread(QThread):
             savename = op.join(save_folder,
                                'Normalized_{}_mitoskel.vtk'.format(key))
 
-            data, v1, v2 = pf.pt_cld_sclrs(self.paths[self.skel_prefix][key],
-                                           (self.paths[self.ch1_prefix]
-                                           [re.sub(self.ch2_prefix,
-                                            self.ch1_prefix,
-                                            key)]),
-                                            self.paths[self.ch2_prefix][key],
-                                           radius=2.5)
-            print "background ch1: {}\n background ch2: {}\n".format(percentile(v1, 5),
-                                                                     percentile(v2, 5))
-            dict_output = pf.normSkel(data, v1, v2)
+            data, v1, v2 = pf.point_cloud_scalars(
+                self.paths[self.skel_prefix][key],
+                self.paths[self.ch1_prefix][re.sub(self.ch2_prefix,
+                                                   self.ch1_prefix, key)],
+                self.paths[self.ch2_prefix][key],
+                radius=2.5)
+
+            dict_output = pf.normalize_skel(data, v1, v2)
             string1 = 'Saved as {}'.format(savename)
             self.emit(SIGNAL('beep(QString)'), string1)
 
-            pf.writevtk(data, savename, **dict_output)
+            pf.write_vtk(data, savename, **dict_output)
 
             self.emit(SIGNAL('update_progress()'))
 
