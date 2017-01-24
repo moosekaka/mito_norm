@@ -7,7 +7,7 @@ import os
 import os.path as op
 import vtk
 import vtk.util.numpy_support as vnpy
-from numpy import ceil, mean
+from numpy import ceil, mean, percentile
 # pylint: disable=C0103
 datadir = op.join(os.getcwd())
 
@@ -55,7 +55,9 @@ def pt_cld_sclrs(skelpath, ch1path, ch2path, **kwargs):
     polydata.SetLines(dataSkel.GetLines())
     polydata.GetPointData().AddArray(ptcld_ch1)
     polydata.GetPointData().AddArray(ptcld_ch2)
-    return polydata
+    np_voxel1 = vnpy.vtk_to_numpy(voxels_ch1.GetPointData().GetScalars())
+    np_voxel2 = vnpy.vtk_to_numpy(voxels_ch2.GetPointData().GetScalars())
+    return polydata, np_voxel1, np_voxel2
 
 
 def _pointcloud(skel, ch1, ch2, radius=2.5):
@@ -88,7 +90,7 @@ def _pointcloud(skel, ch1, ch2, radius=2.5):
     return vox_ch1, vox_ch2
 
 
-def normSkel(polydata, background=None):
+def normSkel(polydata, raw_vox_ch1, raw_vox_ch2, background_thresh=5.):
     """
     Normalize channels to correct for focal plane intensity variations
 
@@ -96,33 +98,30 @@ def normSkel(polydata, background=None):
     ----------
     polydata : vtkPolyData
         vtk object returned from pt_cld_sclrs()
-    backgrnd : tuple
-        tuple containing background values for each channel
+    raw_vox_ch1, raw_vox_ch2 : Numpy array
+        Voxel intensity values in numpy array format
+    backgrnd_thresh : float
+        The default threshold of a background value is the 5th percentile of
+        voxel intensities in the respective channel. This might have to be
+        changed depending on the experimental conditions
     """
     temp = polydata.GetPointData()
     vox_ch1 = vnpy.vtk_to_numpy(temp.GetArray('vox_ch1'))
     vox_ch2 = vnpy.vtk_to_numpy(temp.GetArray('vox_ch2'))
 
-    # pick the lowest value in the channel
-    if background is not None:
-        min_ch1 = min(background[0], min(vox_ch1))
-        min_ch2 = min(background[1], min(vox_ch2))
-    # if no background data file provided, default to min value in skeleton
-    else:
-        min_ch1 = min(vox_ch1)
-        min_ch2 = min(vox_ch2)
+    # minimum threshold values for each channel (background)
+    min_ch1 = percentile(raw_vox_ch1, background_thresh)
+    min_ch2 = percentile(raw_vox_ch2, background_thresh)
 
-    min_ch2 = min_ch2 - 1  # ensure no division by zero
-
-#   background Substracted rfp and gfps
+    # background Substracted rfp and gfps
     ch2_bckgrnd = vox_ch2 - min_ch2
     ch1_bckgrnd = vox_ch1 - min_ch1
 
-#   width equivalent
+    # width equivalent
     width_eqv = ch2_bckgrnd / min(ch2_bckgrnd)
     unscaled_dy = ch1_bckgrnd / width_eqv  # raw DY/W normalized values
 
-#   rescale DY to minmax
+    # rescale DY to minmax
     _min = min(unscaled_dy)
     _max = max(unscaled_dy)
     normalized_dy = ((unscaled_dy - _min)/(_max - _min))
@@ -161,3 +160,15 @@ def writevtk(dat, fname, **kwargs):
     writer.SetFileName(fname)
     writer.SetInputData(dat)
     writer.Update()
+
+L = [i for i in os.listdir('./test')]
+skel = op.join('.','test',L[3])
+ch2 = op.join('.', 'test',L[2])
+ch1 = op.join('.','test',L[0])
+data, c1, c2 =pt_cld_sclrs(skel, ch1, ch2)
+
+#inten1 = data.GetPointData().GetArray('vox_ch1')
+#inten2 = data.GetPointData().GetArray('vox_ch2')
+#
+#inten1 = vnpy.vtk_to_numpy(inten1)
+#inten2 = vnpy.vtk_to_numpy(inten2)

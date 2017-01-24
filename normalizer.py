@@ -39,21 +39,33 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
                      SIGNAL("finished()"),
                      self._filedone)
         self.file_thread.start()
+        self.reset_button.setEnabled(True)
+        self.reset_button.clicked.connect(self._reset)
 
     def _updatedir(self, text):
         self.dir_window.addItem(text)
+
+    def _reset(self):
+        self.file_thread.terminate()
+        self.dir_window.clear()
+        self.dir_button.setEnabled(True)
+        self.reset_button.setEnabled(False)
+        self.run_button.setEnabled(False)
 
     def _getpaths(self, dicts):
         self.paths = dicts
 
     def runmain(self):
-        self.progress_bar.setMaximum(len(self.paths['skeleton']))
+        self.progress_bar.setMaximum(len(self.paths['skel']))
         self.progress_bar.setValue(0)
         self.run_thread = writeVtkThread(self.paths, self.datafolder)
         self.connect(self.run_thread, SIGNAL("beep(QString)"), self._report)
         self.connect(self.run_thread, SIGNAL("update_progress()"), self._bar)
         self.run_thread.finished.connect(self._done)
         self.run_thread.start()
+        self.run_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.stop_button.clicked.connect(self.run_thread.quit)
 
     def _report(self, text):
         self.results_window.addItem(text)
@@ -64,6 +76,13 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
     def _filedone(self):
         self.dir_button.setEnabled(False)
         self.run_button.setEnabled(True)
+
+    def _abort(self):
+        self.run_thread.exit(1)
+        self.run_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        QtGui.QMessageBox.information(self, "Aborted!",
+                                      "Press run to try again!")
 
     def _done(self):
         self.dir_button.setEnabled(True)

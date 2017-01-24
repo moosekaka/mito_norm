@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>811</width>
+    <width>812</width>
     <height>796</height>
    </rect>
   </property>
@@ -19,7 +19,8 @@
      <widget class="QLabel" name="label_3">
       <property name="font">
        <font>
-        <pointsize>26</pointsize>
+        <family>MS Shell Dlg 2</family>
+        <pointsize>24</pointsize>
         <weight>75</weight>
         <bold>true</bold>
        </font>
@@ -27,10 +28,20 @@
       <property name="text">
        <string>Mitograph Normalizer</string>
       </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
     </item>
     <item>
      <widget class="QListWidget" name="dir_window"/>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Status</string>
+      </property>
+     </widget>
     </item>
     <item>
      <widget class="QPushButton" name="dir_button">
@@ -40,9 +51,12 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="label_2">
+     <widget class="QPushButton" name="reset_button">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="text">
-       <string>Status</string>
+       <string>Reset List</string>
       </property>
      </widget>
     </item>
@@ -58,8 +72,21 @@
     </item>
     <item>
      <widget class="QPushButton" name="run_button">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="text">
        <string>Run!</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="stop_button">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string>Abort</string>
       </property>
      </widget>
     </item>
@@ -70,7 +97,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>811</width>
+     <width>812</width>
      <height>21</height>
     </rect>
    </property>
