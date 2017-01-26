@@ -8,9 +8,11 @@ Created on Wed Jan 18 14:06:59 2017
 import os
 import os.path as op
 import re
+import time
 import errno
 from collections import defaultdict
-from PyQt4.QtCore import QThread, SIGNAL
+from PyQt4.QtCore import QThread, QObject, pyqtSlot, pyqtSignal
+from PyQt4.QtGui import QApplication
 import functions as pf
 
 # hash table for sorting and labeling the various VTK file type paths
@@ -32,18 +34,19 @@ def _mkdir_exist(path):
             raise
 
 
-class getFilesThread(QThread):
+class getfilesWorker(QObject):
     """
     Thread method to get paths for skeleton and resampled voxels VTK files
     """
+    signal = pyqtSignal([str], [dict])
+    finished = pyqtSignal()
+
     def __init__(self, folder):
-        QThread.__init__(self)
+        super(getfilesWorker, self).__init__()
         self.folder = folder
 
-    def __del__(self):
-        self.wait()
-
-    def run(self):
+    @pyqtSlot()
+    def work(self):
         vtks = defaultdict(dict)
 
         for files in os.listdir(self.folder):
@@ -69,54 +72,69 @@ class getFilesThread(QThread):
             string = ('There are {1} VTK files found'
                       ' with prefix {0}').format(prefix,
                                                  len(vtks[prefix].keys()))
-            self.emit(SIGNAL('printlog(QString)'), string)
+            self.signal.emit(string)
 
-        self.emit(SIGNAL('getpaths(PyQt_PyObject)'), vtks)
+        self.signal[dict].emit(vtks)
+        self.finished.emit()
 
 
-class writeVtkThread(QThread):
-    """
-    Thread method to for normalization of VTK files
-    """
+class normWorker(QObject):
+    signal = pyqtSignal(str)
+    finished = pyqtSignal()
+    interrupted = pyqtSignal()
+    update_progress = pyqtSignal()
+
     def __init__(self, paths, savedir,
                  skel_prefix='skel',
                  ch1_prefix='gfp',
                  ch2_prefix='rfp'):
-        QThread.__init__(self)
+        super(normWorker, self).__init__()
+        self.flag = True
         self.paths = paths
         self.savedir = str(savedir)
         self.skel_prefix = skel_prefix
         self.ch1_prefix = ch1_prefix
         self.ch2_prefix = ch2_prefix
 
-    def __del__(self):
-        self.wait()
-
-    def run(self):
+    @pyqtSlot()
+    def work(self):
         save_folder = op.join(self.savedir, 'Normalized')
         _mkdir_exist(save_folder)
         skels = self.paths[self.skel_prefix]  # dict of skeletons paths
+        keys = skels.keys()
 
-        # note because skeleton key is based on ch2, re.sub() is needed to
-        # get correct value for ch1 path
-        for key, _ in sorted(skels.iteritems()):
+        while keys and self.flag:
+            key = keys.pop()
+            print "now on {}".format(key)
             savename = op.join(save_folder,
                                'Normalized_{}_mitoskel.vtk'.format(key))
 
+            # note because skeleton key is based on ch2, re.sub() is needed to
+            # get correct value for ch1 path
             data, v1, v2 = pf.point_cloud_scalars(
                 self.paths[self.skel_prefix][key],
                 self.paths[self.ch1_prefix][re.sub(self.ch2_prefix,
                                                    self.ch1_prefix, key)],
                 self.paths[self.ch2_prefix][key],
                 radius=2.5)
-
             dict_output = pf.normalize_skel(data, v1, v2)
-            string1 = 'Saved as {}'.format(savename)
-            self.emit(SIGNAL('beep(QString)'), string1)
-
             pf.write_vtk(data, savename, **dict_output)
 
-            self.emit(SIGNAL('update_progress()'))
+            # report worker status to main GUI
+            string1 = 'Saved as {}'.format(savename)
+            self.signal[str].emit(string1)
+            self.update_progress.emit()
+            QApplication.processEvents()
 
-        string2 = 'Finished Normalization of {} files'.format(len(skels))
-        self.emit(SIGNAL('beep(QString)'), string2)
+        if not keys:
+            string2 = 'Finished Normalization of {} files'.format(len(skels))
+            self.signal.emit(string2)
+            self.finished.emit()
+        else:
+            string2 = 'Failed!'
+            self.interrupted.emit()
+
+    @pyqtSlot()
+    def stop(self):
+        print "Process Halted"
+        self.flag = False
