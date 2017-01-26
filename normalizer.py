@@ -35,10 +35,10 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         self.connect(self.file_thread,
                      SIGNAL("getpaths(PyQt_PyObject)"),
                      self._getpaths)
-        self.connect(self.file_thread,
-                     SIGNAL("finished()"),
-                     self._filedone)
-        self.file_thread.start()
+        self.file_thread.finished.connect(self._filedone)
+
+        self.file_thread.start()  # not run()!!
+
         self.reset_button.setEnabled(True)
         self.reset_button.clicked.connect(self._reset)
 
@@ -61,11 +61,24 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         self.run_thread = writeVtkThread(self.paths, self.datafolder)
         self.connect(self.run_thread, SIGNAL("beep(QString)"), self._report)
         self.connect(self.run_thread, SIGNAL("update_progress()"), self._bar)
+        self.connect(self.run_thread, SIGNAL("Abort(QString)"), self._cleanup)
+        self.stop_button.clicked.connect(self._stopthread)
         self.run_thread.finished.connect(self._done)
-        self.run_thread.start()
+
+        self.run_thread.start()  # not run()!!
+
         self.run_button.setEnabled(False)
         self.stop_button.setEnabled(True)
         self.stop_button.clicked.connect(self.run_thread.quit)
+
+    def _stopthread(self):
+        self.run_thread.flag = False
+
+    def _cleanup(self, text):
+        self.progress_bar.setValue(0)
+        self.run_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.results_window.addItem(text)
 
     def _report(self, text):
         self.results_window.addItem(text)

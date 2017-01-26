@@ -1,7 +1,7 @@
 # Mitograph normalizer: normalizes outputs from Mitograph V2
 
 <p align="center">
-<img src="./image.png" width="80%" />
+<img src="./gif_samp.gif" width="80%" />
 </p>
 
 The executable (for Windows) standalone program is available in a zipped file:

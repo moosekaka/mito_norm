@@ -13,6 +13,7 @@ from collections import defaultdict
 from PyQt4.QtCore import QThread, SIGNAL
 import functions as pf
 
+# hash table for sorting and labeling the various VTK file type paths
 SEARCHDICT = defaultdict(dict,
                          {'resampled': {'RFPstack': 'rfp',
                                         'GFPstack': 'gfp'},
@@ -51,12 +52,17 @@ class getFilesThread(QThread):
                 channel_type = re.search(r'([GR]FPstack)\w?\d+', files)
 
                 if vtk_type and channel_type:
+                    # this will be the unique ID for each cell
                     cell_id = channel_type.string[:channel_type.end()].lower()
+                    # this is just used to determine which type of VTK file
+                    # (ie skeleton or voxel/channel file to use)
                     prefix = (SEARCHDICT.
                               get(vtk_type.group(1)).
                               get(channel_type.group(1)))
 
-                    if prefix:  # if skeleton GFPstack do nothing
+                    # if no prefix found, means skeleton.vtk is based on
+                    # ch1 which is not what we want
+                    if prefix:
                         vtks[prefix][cell_id] = op.join(self.folder, files)
 
         for prefix in vtks:
