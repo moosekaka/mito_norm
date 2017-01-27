@@ -15,17 +15,20 @@ Ui_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
 
 class MyApp(QtGui.QMainWindow, Ui_MainWindow):
+    """
+    GUI for mitograph output normalizer
+    """
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
-        self.dir_button.clicked.connect(self.selectDir)
+        self.dir_button.clicked.connect(self.getDirThread)
         self.run_button.clicked.connect(self.normalizeThread)
         self.run_button.setEnabled(False)
         self.paths = None
         self.datafolder = None
 
-    def selectDir(self):
+    def getDirThread(self):
         self.filethread = QThread()
 
         self.datafolder = QFileDialog.getExistingDirectory(self, 'Folders')
@@ -54,6 +57,11 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
     def _getpaths(self, dicts):
         self.paths = dicts
 
+    def _filedone(self):
+        self.filethread.quit()
+        self.dir_button.setEnabled(False)
+        self.run_button.setEnabled(True)
+
     def normalizeThread(self):
         self.runthread = QThread(self)
         self.worker2 = normWorker(self.paths, self.datafolder)
@@ -77,11 +85,6 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
 
     def _bar(self):
         self.progress_bar.setValue(self.progress_bar.value() + 1)
-
-    def _filedone(self):
-        self.filethread.quit()
-        self.dir_button.setEnabled(False)
-        self.run_button.setEnabled(True)
 
     def _done(self):
         self.runthread.quit()

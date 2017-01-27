@@ -12,7 +12,7 @@ import time
 import errno
 from collections import defaultdict
 from PyQt4.QtCore import QThread, QObject, pyqtSlot, pyqtSignal
-from PyQt4.QtGui import QApplication
+from PyQt4.QtGui import qApp
 import functions as pf
 
 # hash table for sorting and labeling the various VTK file type paths
@@ -105,7 +105,6 @@ class normWorker(QObject):
 
         while keys and self.flag:
             key = keys.pop()
-            print "now on {}".format(key)
             savename = op.join(save_folder,
                                'Normalized_{}_mitoskel.vtk'.format(key))
 
@@ -124,7 +123,7 @@ class normWorker(QObject):
             string1 = 'Saved as {}'.format(savename)
             self.signal[str].emit(string1)
             self.update_progress.emit()
-            QApplication.processEvents()
+            qApp.processEvents()
 
         if not keys:
             string2 = 'Finished Normalization of {} files'.format(len(skels))
