@@ -17,9 +17,9 @@ import functions as pf
 
 # hash table for sorting and labeling the various VTK file type paths
 SEARCHDICT = defaultdict(dict,
-                         {'resampled': {'RFPstack': 'rfp',
-                                        'GFPstack': 'gfp'},
-                          'skeleton': {'RFPstack': 'skel'}})
+                         {'resampled': {'ch2': 'ch2',
+                                        'ch1': 'ch1'},
+                          'skeleton': {'ch2': 'skel'}})
 
 
 def _mkdir_exist(path):
@@ -52,7 +52,7 @@ class getfilesWorker(QObject):
         for files in os.listdir(self.folder):
             if op.isfile(op.join(self.folder, files)):
                 vtk_type = re.search(r'(skeleton|resampled)', files)
-                channel_type = re.search(r'([GR]FPstack)\w?\d+', files)
+                channel_type = re.search(r'(ch[12])\w+\d+', files)
 
                 if vtk_type and channel_type:
                     # this will be the unique ID for each cell
@@ -86,8 +86,8 @@ class normWorker(QObject):
 
     def __init__(self, paths, savedir,
                  skel_prefix='skel',
-                 ch1_prefix='gfp',
-                 ch2_prefix='rfp'):
+                 ch1_prefix='ch1',
+                 ch2_prefix='ch2'):
         super(normWorker, self).__init__()
         self.flag = True
         self.paths = paths
