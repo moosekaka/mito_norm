@@ -31,19 +31,21 @@ program.
   * `XXXXXXX_ch1_xxx_resampled.vtk`
   * `XXXXXXX_ch2_xxx_resampled.vtk`
 
-  where `XXXXXXX` is a prefix containing any alphanumeric character of any length
+  where `XXXXXXX` is a prefix containing any alphanumeric (A-Za-z0-9_) character of any length
   that the user can use to label the experimental conditions or any other
   metadata, while `xxx` is a 3 digit sequence that the user will use to uniquely
   identify the cell/file data.
 
   >The important thing is to ensure that the skeleton file has the **ch2** and
-  *skeleton* while the resampled files has the **ch1** or **ch2** and **resampled**
+  **skeleton** label while the resampled files has the **ch1** or **ch2** and **resampled**
   label in the correct positions *separated by underscores*.
 
-3. Make sure the three type of files are in one folder. Hit the `Select Folder
-where data is Located` button. This will tell the program where the files are
-located. *The program will not let you continue if the files are not found or if
-the number of files for each channel is not the same.*
+3. Make sure the three type of files (skeleton, ch1 resampled and ch2 resampled)
+ are in one folder. Hit the `Select Folder where data is Located` button.
+ This will tell the program where the files are located.
+ 
+ *The program will not let you continue if the files are not found or if the
+  number of files for each channel is not the same.*
 
 4. Hit `Run!` button. Wait for program to finish. You can press `Abort` to stop
 the program at any time.
@@ -54,8 +56,8 @@ the program at any time.
 
   * `Normalized_XXXXXXX_ch2_xxx_mitostack.vtk`
 
-    Notice that the original file has now been appended with `Normalized` and
-    `mitostack` to the original label. Also it is `ch2` that is outputted since
+    Notice that the original file has now been appended with **Normalized** and
+    **mitostack** to the original label. Also it is **ch2** that is outputted since
     that was the channel that provided the skeleton information for
     normalization (i.e. the normalized skeleton is based on channel 2).
 
