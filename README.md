@@ -83,7 +83,7 @@ the program at any time.
 
    You should see __*root__ environment with an asterisk.
 
-3. Cd into the *mitonorm* folder which should contain an *environment.yml* file.
+3. `cd` into the *mitonorm* folder which should contain an *environment.yml* file.
  Update the *root* environment using the *environment.yml* file by typing:
 
    `conda env update -n root -f environment.yml`
