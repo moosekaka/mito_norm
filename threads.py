@@ -2,16 +2,15 @@
 """
 Created on Wed Jan 18 14:06:59 2017
 
-@author: sweel_Rafelski
+@author: swee lim
 """
 
 import os
 import os.path as op
 import re
-import time
 import errno
 from collections import defaultdict
-from PyQt4.QtCore import QThread, QObject, pyqtSlot, pyqtSignal
+from PyQt4.QtCore import QThread, pyqtSlot, pyqtSignal
 from PyQt4.QtGui import qApp
 import functions as pf
 
@@ -34,19 +33,23 @@ def _mkdir_exist(path):
             raise
 
 
-class getfilesWorker(QObject):
+class getFileThread(QThread):
     """
-    Thread method to get paths for skeleton and resampled voxels VTK files
+    Subclass  QThead.run() to get paths for skeleton and resampled
+    voxels VTK files.
     """
     signal = pyqtSignal([str], [dict])
     finished = pyqtSignal()
 
     def __init__(self, folder):
-        super(getfilesWorker, self).__init__()
+        super(getFileThread, self).__init__()
         self.folder = folder
 
     @pyqtSlot()
-    def work(self):
+    def run(self):
+        """
+        Runs a regex search for the labels skeleton, resampled and ch1 or ch2.
+        """
         vtks = defaultdict(dict)
 
         for files in os.listdir(self.folder):
@@ -78,7 +81,10 @@ class getfilesWorker(QObject):
         self.finished.emit()
 
 
-class normWorker(QObject):
+class normalizeThread(QThread):
+    """
+    Subclass QThread to run normalizing routine
+    """
     signal = pyqtSignal(str)
     finished = pyqtSignal()
     interrupted = pyqtSignal()
@@ -88,7 +94,7 @@ class normWorker(QObject):
                  skel_prefix='skel',
                  ch1_prefix='ch1',
                  ch2_prefix='ch2'):
-        super(normWorker, self).__init__()
+        super(normalizeThread, self).__init__()
         self.flag = True
         self.paths = paths
         self.savedir = str(savedir)
@@ -97,7 +103,12 @@ class normWorker(QObject):
         self.ch2_prefix = ch2_prefix
 
     @pyqtSlot()
-    def work(self):
+    def run(self):
+        """
+        Runs pf.point_cloud_data() to get a point cloud of VTK values around
+        each point on the skeleton, normalizes the channels with pf.normalize()
+        and writes output using pf.write_vtk()
+        """
         save_folder = op.join(self.savedir, 'Normalized')
         _mkdir_exist(save_folder)
         skels = self.paths[self.skel_prefix]  # dict of skeletons paths
@@ -135,5 +146,5 @@ class normWorker(QObject):
 
     @pyqtSlot()
     def stop(self):
-        print "Process Halted"
+        print "Thread Interrupted!"
         self.flag = False

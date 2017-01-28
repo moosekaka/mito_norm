@@ -2,13 +2,12 @@
 """
 Created on Wed Jan 11 16:05:18 2017
 
-@author: sweel_Rafelski
+@author: swee lim
 """
 import sys
 from PyQt4 import QtGui, uic
-from PyQt4.QtCore import QThread, pyqtSlot, QObject
 from PyQt4.QtGui import QFileDialog
-from threads import getfilesWorker, normWorker
+from threads import getFileThread, normalizeThread
 
 qtCreatorFile = "normalizer.ui"  # Enter file here.
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
@@ -22,24 +21,20 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         QtGui.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
-        self.dir_button.clicked.connect(self.getDirThread)
-        self.run_button.clicked.connect(self.normalizeThread)
+        self.dir_button.clicked.connect(self.getDirThreadClient)
+        self.run_button.clicked.connect(self.normalizeThreadClient)
         self.run_button.setEnabled(False)
         self.paths = None
         self.datafolder = None
 
-    def getDirThread(self):
-        self.filethread = QThread()
-
+    def getDirThreadClient(self):
         self.datafolder = QFileDialog.getExistingDirectory(self, 'Folders')
-        self.worker = getfilesWorker(str(self.datafolder))
-        self.worker.moveToThread(self.filethread)
-        self.worker.signal.connect(self._updatedir)
-        self.worker.signal[dict].connect(self._getpaths)
+        self.filethread = getFileThread(str(self.datafolder))
+        self.filethread.signal.connect(self._updatedir)
+        self.filethread.signal[dict].connect(self._getpaths)
 
         # key signals
-        self.worker.finished.connect(self._filedone)
-        self.filethread.started.connect(self.worker.work)
+        self.filethread.finished.connect(self._filedone)
         self.filethread.start()
 
         self.reset_button.setEnabled(True)
@@ -58,25 +53,21 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         self.paths = dicts
 
     def _filedone(self):
-        self.filethread.quit()
         self.dir_button.setEnabled(False)
         self.run_button.setEnabled(True)
 
-    def normalizeThread(self):
-        self.runthread = QThread(self)
-        self.worker2 = normWorker(self.paths, self.datafolder)
-        self.worker2.moveToThread(self.runthread)
+    def normalizeThreadClient(self):
+        self.normthread = normalizeThread(self.paths, self.datafolder)
         self.progress_bar.setMaximum(len(self.paths['skel']))
         self.progress_bar.setValue(0)
-        self.stop_button.clicked.connect(self.worker2.stop)
-        self.worker2.signal.connect(self._report)
-        self.worker2.update_progress.connect(self._bar)
+        self.stop_button.clicked.connect(self.normthread.stop)
+        self.normthread.signal.connect(self._report)
+        self.normthread.update_progress.connect(self._bar)
 
         # key signals
-        self.worker2.finished.connect(self._done)
-        self.worker2.interrupted.connect(self._interrupted)
-        self.runthread.started.connect(self.worker2.work)
-        self.runthread.start()
+        self.normthread.finished.connect(self._done)
+        self.normthread.interrupted.connect(self._interrupted)
+        self.normthread.start()
 
         self.stop_button.setEnabled(True)
 
@@ -87,17 +78,17 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
     def _done(self):
-        self.runthread.quit()
         self.dir_button.setEnabled(True)
         self.run_button.setEnabled(False)
         QtGui.QMessageBox.information(self, "Finished", "Files Normalized!")
 
     def _interrupted(self):
-        self.runthread.quit()
+        self.normthread.quit()
+        self.normthread.wait()
         self.dir_button.setEnabled(True)
         self.run_button.setEnabled(True)
         self.stop_button.setEnabled(False)
-        QtGui.QMessageBox.information(self, "Not Finished",
+        QtGui.QMessageBox.information(self, "Aborted",
                                       "Hit Run Again or Select new directory!")
 
 if __name__ == "__main__":
