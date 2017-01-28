@@ -94,7 +94,7 @@ the program at any time.
 
   **Make sure that Numpy, VTK, Pyqt and Pyinstaller are listed.**
 
-5. Build a one folder binary by typing (again make sure that the current):
+5. Make sure that the current folder contains *normalizer.spec* file. Build a one-folder executable by typing:
 
   `Pyinstaller normalizer.spec`
 
