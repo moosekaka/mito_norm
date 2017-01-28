@@ -43,7 +43,7 @@ program.
 3. Make sure the three type of files (skeleton, ch1 resampled and ch2 resampled)
  are in one folder. Hit the `Select Folder where data is Located` button.
  This will tell the program where the files are located.
- 
+
  *The program will not let you continue if the files are not found or if the
   number of files for each channel is not the same.*
 
@@ -67,3 +67,37 @@ the program at any time.
  under the *Coloring* toolbar, select either `normalized_dy` to provide a
  heatmap with a range of 0.0 - 1.0 or `unscaled_dy` for a heatmap containing the
  raw intensity units (a.u.).
+
+## Instruction for building a binary file
+
+1. Download and install [Miniconda](https://conda.io/miniconda.html)
+2. Open up a shell, type:
+
+   (Mac OS): `source activate root`
+
+   (Windows): `activate root`
+
+   Verify that the *root* environment for Conda has been activated by typing:
+
+   `conda info --envs`
+
+   You should see __*root__ environment with an asterisk.
+
+3. Cd into the *mitonorm* folder which should contain an *environment.yml* file.
+ Update the *root* environment using the *environment.yml* file by typing:
+
+   `conda env update -n root -f environment.yml`
+
+4. Verify the dependencies have been installed by typing:
+
+  `conda list`
+
+  **Make sure that Numpy, VTK, Pyqt and Pyinstaller are listed.**
+
+5. Build a one folder binary by typing (again make sure that the current):
+
+  `Pyinstaller normalizer.spec`
+
+  The executable file `normalizer` is by default created in
+   `./dist/normalizer`. The normalizer folder can be zipped for a smaller
+   distribution size.
