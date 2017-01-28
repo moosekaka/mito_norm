@@ -30,17 +30,18 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
     def getDirThreadClient(self):
         self.datafolder = QFileDialog.getExistingDirectory(self, 'Folders')
         self.filethread = getFileThread(str(self.datafolder))
-        self.filethread.signal.connect(self._updatedir)
+        self.filethread.signal.connect(self._update_dir_window)
         self.filethread.signal[dict].connect(self._getpaths)
 
         # key signals
-        self.filethread.finished.connect(self._filedone)
+        self.filethread.success.connect(self._onsuccess)
+        self.filethread.failed.connect(self._onfailed)
         self.filethread.start()
 
         self.reset_button.setEnabled(True)
         self.reset_button.clicked.connect(self._reset)
 
-    def _updatedir(self, text):
+    def _update_dir_window(self, text):
         self.dir_window.addItem(text)
 
     def _reset(self):
@@ -52,16 +53,20 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
     def _getpaths(self, dicts):
         self.paths = dicts
 
-    def _filedone(self):
+    def _onsuccess(self):
         self.dir_button.setEnabled(False)
         self.run_button.setEnabled(True)
+
+    def _onfailed(self):
+        # placeholder for future actions if failed
+        pass
 
     def normalizeThreadClient(self):
         self.normthread = normalizeThread(self.paths, self.datafolder)
         self.progress_bar.setMaximum(len(self.paths['skel']))
         self.progress_bar.setValue(0)
         self.stop_button.clicked.connect(self.normthread.stop)
-        self.normthread.signal.connect(self._report)
+        self.normthread.signal.connect(self._update_result_window)
         self.normthread.update_progress.connect(self._bar)
 
         # key signals
@@ -71,7 +76,7 @@ class MyApp(QtGui.QMainWindow, Ui_MainWindow):
 
         self.stop_button.setEnabled(True)
 
-    def _report(self, text):
+    def _update_result_window(self, text):
         self.results_window.addItem(text)
 
     def _bar(self):

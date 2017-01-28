@@ -39,7 +39,8 @@ class getFileThread(QThread):
     voxels VTK files.
     """
     signal = pyqtSignal([str], [dict])
-    finished = pyqtSignal()
+    failed = pyqtSignal()
+    success = pyqtSignal()
 
     def __init__(self, folder):
         super(getFileThread, self).__init__()
@@ -71,14 +72,24 @@ class getFileThread(QThread):
                     if prefix:
                         vtks[prefix][cell_id] = op.join(self.folder, files)
 
-        for prefix in vtks:
-            string = ('There are {1} VTK files found'
-                      ' with prefix {0}').format(prefix,
-                                                 len(vtks[prefix].keys()))
-            self.signal.emit(string)
-
-        self.signal[dict].emit(vtks)
-        self.finished.emit()
+        # Checks
+        numfiles = len(vtks['skel'].keys())
+        if numfiles:
+            condition2 = all([len(vtks[k].keys()) == numfiles for k in vtks])
+            if condition2:
+                self.signal[dict].emit(vtks)
+                self.signal.emit("Found {} skeleton that are ready "
+                                 "to be normalized!".format(numfiles))
+                self.success.emit()
+            else:
+                self.signal.emit("The number of Skeleton and Resampled files "
+                                 "in channels 1 and 2 are not the same, "
+                                 "please fix!")
+                self.failed.emit()
+        else:
+            self.signal.emit("No suitable skeleton VTK files found, please "
+                             "check your labels are in the correct format!")
+            self.failed.emit()
 
 
 class normalizeThread(QThread):
@@ -137,12 +148,15 @@ class normalizeThread(QThread):
             qApp.processEvents()
 
         if not keys:
-            string2 = 'Finished Normalization of {} files'.format(len(skels))
+            string2 = 'Finished Normalization of {} files!'.format(len(skels))
             self.signal.emit(string2)
             self.finished.emit()
         else:
-            string2 = 'Failed!'
+            remain = len(skels) - len(keys)
+            string2 = ('Process interrupted! {} out of {} files '
+                       'were normalized!'.format(remain, len(skels)))
             self.interrupted.emit()
+            self.signal.emit(string2)
 
     @pyqtSlot()
     def stop(self):
