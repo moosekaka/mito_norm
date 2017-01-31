@@ -23,5 +23,4 @@ dependencies:
 - pip:
   - future==0.16.0
   - pyinstaller==3.2.1
-prefix: C:\Users\sweel-i5-ssd\Anaconda2\envs\build
 
